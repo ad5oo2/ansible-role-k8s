@@ -1,0 +1,56 @@
+- name: Test if cluster config exists
+  ansible.builtin.stat:
+    path: /etc/kubernetes/admin.conf
+  register: admin_file
+
+- fail:
+    msg: Cluster config exists
+  when: admin_file.stat.exists
+
+- name: Get PIDs for kube-apiserver
+  ansible.builtin.shell: pgrep kube-apiserver
+  register: apiserver_pids
+  failed_when: false
+  changed_when: false
+
+- fail:
+    msg: kube-apiserver already running
+  when: apiserver_pids.rc == 0
+
+- name: Add kubeadm init script
+  ansible.builtin.template:
+    src: cluster-init.j2
+    dest: "{{ download_dir }}/cluster-init.sh"
+    mode: '0700'
+
+- name: Run init script
+  ansible.builtin.command: "{{ download_dir }}/cluster-init.sh"
+  register: kubeadm_init
+
+- name: Save init script log
+  ansible.builtin.copy:
+    content: |
+      ======================================
+      KUBEADM INIT OUTPUT
+      ======================================
+      {{ kubeadm_init.stdout }}
+
+      ======================================
+      STDERR (if any)
+      ======================================
+      {{ kubeadm_init.stderr }}
+    dest: "{{ download_dir }}/cluster-init.log"
+
+- name: Copy cluster init log to bootstrap dir
+  ansible.builtin.fetch:
+    src: "{{ download_dir }}/cluster-init.log"
+    dest: "{{ playbook_dir }}/bootstrap/cluster-init.log"
+    flat: true
+
+- name: Copy cluster config to bootstrap dir
+  ansible.builtin.fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ playbook_dir }}/bootstrap/admin.conf"
+    flat: true
+
+# vim: ft=yaml.ansible

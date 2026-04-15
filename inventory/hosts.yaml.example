@@ -1,0 +1,46 @@
+prod_masters:
+  hosts:
+    master0.cluster.prod:
+      ansible_host: x.x.x.x
+      ansible_port: 22
+      ansible_user: root
+
+prod_workers:
+  hosts:
+    worker0.cluster.prod:
+      ansible_host: x.x.x.x
+      ansible_port: 22
+      ansible_user: root
+
+prod_cluster:
+  children:
+    prod_masters:
+    prod_workers:
+
+local_masters:
+  hosts:
+    c0.cluster.local:
+      ansible_host: c0.cluster.local
+    c1.cluster.local:
+      ansible_host: c1.cluster.local
+    c2.cluster.local:
+      ansible_host: c2.cluster.local
+
+local_workers:
+  hosts:
+    w0.cluster.local:
+      ansible_host: w0.cluster.local
+    w1.cluster.local:
+      ansible_host: w1.cluster.local
+    w2.cluster.local:
+      ansible_host: w2.cluster.local
+
+local_cluster:
+  children:
+    local_masters:
+    local_workers:
+
+all:
+  children:
+    local_cluster:
+    prod_cluster:

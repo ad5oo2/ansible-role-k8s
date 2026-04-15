@@ -1,0 +1,16 @@
+- name: Generate bootstrap script
+  ansible.builtin.template:
+    src: bootstrap.j2
+    dest: "{{ playbook_dir }}/bootstrap/bootstrap.sh"
+    mode: '0700'
+  delegate_to: localhost
+  run_once: true
+
+- name: Generate root argocd app
+  ansible.builtin.template:
+    src: argocd-root-app.j2
+    dest: "{{ playbook_dir }}/bootstrap/argocd-root-app.yaml"
+  delegate_to: localhost
+  run_once: true
+
+# vim: ft=yaml.ansible

@@ -1,0 +1,94 @@
+- name: Register download_objects array
+  ansible.builtin.set_fact:
+    download_objects:
+      - name: kubeadm
+        file: "kubeadm-{{ k8s_version}}-{{ arch }}"
+        url: "https://dl.k8s.io/release/v{{ k8s_version }}/bin/linux/{{ arch }}/kubeadm"
+      - name: kubelet
+        file: "kubelet-{{ k8s_version}}-{{ arch }}"
+        url: "https://dl.k8s.io/release/v{{ k8s_version }}/bin/linux/{{ arch }}/kubelet"
+      - name: kubelet.service
+        file: "kubelet.service-{{ k8s_release }}-{{ arch }}"
+        url: "https://raw.githubusercontent.com/kubernetes/release/v{{ k8s_release }}/cmd/krel/templates/latest/kubelet/kubelet.service"
+      - name: 10-kubeadm.conf
+        file: "10-kubeadm.conf-{{ k8s_release }}-{{ arch }}"
+        url: "https://raw.githubusercontent.com/kubernetes/release/v{{ k8s_release }}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf"
+
+- name: Register download_status array
+  ansible.builtin.set_fact:
+    download_status: []
+
+- name: Create directories if not exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /usr/lib/systemd/system
+    - /usr/lib/systemd/system/kubelet.service.d
+    - "{{ download_dir }}"
+    - "{{ k8s_patches_dir }}"
+
+- name: Check if files already downloaded
+  ansible.builtin.stat:
+    path: "{{ download_dir }}/{{ item.file }}"
+  register:
+    download_status
+  loop: "{{ download_objects }}"
+
+- name: Download missing files
+  ansible.builtin.get_url:
+    url: "{{ item.item.url }}"
+    dest: "{{ download_dir }}/{{ item.item.file }}"
+    mode: '0600'
+  loop: "{{ download_status.results | selectattr('stat.exists', 'equalto', false) | list }}"
+
+- name: Install kubelet and kubeadm
+  ansible.builtin.copy:
+    src: "{{ download_dir }}/{{ download_objects | selectattr('name', 'equalto', item) | map(attribute='file') | first }}"
+    dest: "/usr/local/bin/{{ item }}"
+    remote_src: yes
+    mode: '0755'
+  loop:
+    - kubelet
+    - kubeadm
+
+- name: Configure kubelet.service
+  ansible.builtin.replace:
+    path: "{{ download_dir }}/{{ download_objects | selectattr('name', 'equalto', 'kubelet.service') | map(attribute='file') | first }}"
+    regexp: '/usr/bin'
+    replace: '/usr/local/bin'
+
+- name: Configure kubelet.service kubeadm config
+  ansible.builtin.replace:
+    path: "{{ download_dir }}/{{ download_objects | selectattr('name', 'equalto', '10-kubeadm.conf') | map(attribute='file') | first }}"
+    regexp: '/usr/bin'
+    replace: '/usr/local/bin'
+
+- name: Install kubelet service
+  ansible.builtin.copy:
+    src: "{{ download_dir }}/{{ download_objects | selectattr('name', 'equalto', 'kubelet.service') | map(attribute='file') | first }}"
+    dest: /usr/lib/systemd/system/kubelet.service
+    remote_src: yes
+    mode: '0755'
+
+- name: Install kubelet.service kubeadm config
+  ansible.builtin.copy:
+    src: "{{ download_dir }}/{{ download_objects | selectattr('name', 'equalto', '10-kubeadm.conf') | map(attribute='file') | first }}"
+    dest: /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+    remote_src: yes
+    mode: '0755'
+
+- name: Enable kubelet service
+  ansible.builtin.systemd_service:
+    name: kubelet
+    daemon_reload: true
+    enabled: true
+    state: started
+
+- name: Add kubelet TLS patch
+  ansible.builtin.copy:
+    src: kubeletconfiguration0+merge.yaml
+    dest: "{{ k8s_patches_dir }}"
+
+# vim: ft=yaml.ansible

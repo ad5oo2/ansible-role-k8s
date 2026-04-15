@@ -1,0 +1,11 @@
+- name: Bootstrap cluster
+  hosts: all
+  become: false
+
+  tasks:
+  - name: Import k8s_bootstrap role
+    ansible.builtin.import_role:
+      name: k8s_bootstrap
+
+# vim: ft=yaml.ansible
+

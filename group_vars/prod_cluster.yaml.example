@@ -1,0 +1,9 @@
+k8s_control_plane_endpoint: control.cluster.prod:6443
+k8s_apiserver_advertise_address: x.x.x.1
+k8s_apiserver_cert_extra_sans: x.x.x.1,extra-domains.cluster.prod
+k8s_nodes_network: 0.0.0.0/0
+argocd_hostname: "cd.host.com"
+argocd_repo_url: git@github.com:xxxx/xxxxx.git
+argocd_repo_path: cicd
+argocd_repo_revision: main
+argocd_repo_sshkey_path: /home/user/.ssh/id_rsa

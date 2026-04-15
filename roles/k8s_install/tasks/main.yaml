@@ -1,0 +1,13 @@
+- name: Prepare host for cluster
+  ansible.builtin.import_tasks:
+    file: preflight.yaml
+
+- name: Install containerd engine
+  ansible.builtin.import_tasks:
+    file: containerd.yaml
+
+- name: Install k8s
+  ansible.builtin.import_tasks:
+    file: k8s.yaml
+
+# vim: ft=yaml.ansible

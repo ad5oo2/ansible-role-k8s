@@ -1,0 +1,10 @@
+- name: Install k8s
+  hosts: all
+  become: true
+
+  tasks:
+  - name: Install k8s with kubeadm
+    ansible.builtin.import_role:
+      name: k8s_install
+
+# vim: ft=yaml.ansible

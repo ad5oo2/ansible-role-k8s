@@ -1,0 +1,99 @@
+- name: Register download_objects array
+  ansible.builtin.set_fact:
+    download_objects:
+      - name: containerd
+        file: "containerd-{{ containerd_version}}-linux-{{ arch }}.tar.gz"
+        url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-{{ arch }}.tar.gz"
+      - name: runc
+        file: "runc-{{ runc_version }}-{{ arch }}"
+        url: "https://github.com/opencontainers/runc/releases/download/v{{ runc_version }}/runc.{{ arch }}"
+      - name: cni-plugins
+        file: "cni-plugins-linux-{{ arch }}-v{{ cni_version }}.tgz"
+        url: "https://github.com/containernetworking/plugins/releases/download/v{{ cni_version }}/cni-plugins-linux-{{ arch }}-v{{ cni_version }}.tgz"
+      - name: containerd.service
+        file: containerd.service
+        url: "https://raw.githubusercontent.com/containerd/containerd/main/containerd.service"
+
+- name: Register download_status array
+  ansible.builtin.set_fact:
+    download_status: []
+
+- name: Create dirrectories if not exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /usr/local/bin
+    - /usr/local/sbin
+    - /opt/cni/bin
+    - /usr/local/lib/systemd/system
+    - /etc/containerd/
+    - "{{ download_dir }}"
+
+- name: Check if files already downloaded
+  ansible.builtin.stat:
+    path: "{{ download_dir }}/{{ item.file }}"
+  register:
+    download_status
+  loop: "{{ download_objects }}"
+
+- name: Download missing files
+  ansible.builtin.get_url:
+    url: "{{ item.item.url }}"
+    dest: "{{ download_dir }}/{{ item.item.file }}"
+    mode: '0600'
+  loop: "{{ download_status.results | selectattr('stat.exists', 'equalto', false) | list }}"
+
+- name: Install containerd
+  ansible.builtin.unarchive:
+    src: "{{ download_dir }}/{{ download_objects | selectattr('name', 'equalto', 'containerd') | map(attribute='file') | first }}"
+    dest: /usr/local
+    remote_src: yes
+
+- name: Install containerd service
+  ansible.builtin.copy:
+    src: "{{ download_dir }}/{{ download_objects | selectattr('name', 'equalto', 'containerd.service') | map(attribute='file') | first }}"
+    dest: /usr/local/lib/systemd/system/containerd.service
+    remote_src: yes
+    mode: '0600'
+
+- name: Get default containerd config
+  ansible.builtin.shell:
+    "containerd config default > {{ download_dir }}/containerd-config.toml"
+
+- name: Configure containerd
+  ansible.builtin.replace:
+    path: "{{ download_dir }}/containerd-config.toml"
+    regexp: 'SystemdCgroup = false'
+    replace: 'SystemdCgroup = true'
+
+- name: Install containerd config
+  ansible.builtin.copy:
+    src: "{{ download_dir }}//containerd-config.toml"
+    dest: /etc/containerd/config.toml
+    remote_src: yes
+    mode: '0600'
+
+- name: Enable containerd service
+  ansible.builtin.systemd_service:
+    name: containerd
+    daemon_reload: true
+    enabled: true
+    state: started
+
+- name: Install runc binary
+  ansible.builtin.copy:
+    src: "{{ download_dir }}/{{ download_objects | selectattr('name', 'equalto', 'runc') | map(attribute='file') | first }}"
+    dest: /usr/local/sbin/runc
+    remote_src: yes
+    mode: '0755'
+
+- name: Install CNI plugins
+  ansible.builtin.unarchive:
+    src: "{{ download_dir }}/{{ download_objects | selectattr('name', 'equalto', 'cni-plugins') | map(attribute='file') | first }}"
+    dest: /opt/cni/bin
+    remote_src: yes
+    mode: '0755'
+
+# vim: ft=yaml.ansible
