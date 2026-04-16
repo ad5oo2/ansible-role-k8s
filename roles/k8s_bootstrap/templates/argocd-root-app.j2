@@ -5,6 +5,8 @@ metadata:
   namespace: argocd
   labels:
     argocd.argoproj.io/secret-type: repository
+  finalizers:
+    - argocd.argoproj.io/resources-finalizer
 stringData:
   type: git
   url: {{ argocd_repo_url }}

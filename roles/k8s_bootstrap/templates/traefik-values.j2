@@ -1,0 +1,32 @@
+providers:
+  kubernetesCRD:
+    enabled: false
+  kubernetesIngress:
+    enabled: false
+  kubernetesGateway:
+    enabled: true
+    namespaces: []
+
+gateway:
+  enabled: false
+
+ports:
+  web:
+    nodePort: 30080
+    exposedPort: 80
+    forwardedHeaders:
+      trustedIPs: &trustedIPs
+        - "10.0.0.0/8"
+        - "172.16.0.0/12"
+        - "192.168.0.0/16"
+    proxyProtocol:
+      trustedIPs: *trustedIPs
+  websecure:
+    nodePort: 30443
+    exposedPort: 443
+    forwardedHeaders:
+      trustedIPs: *trustedIPs
+    proxyProtocol:
+      trustedIPs: *trustedIPs
+
+# vim: ft=helm

@@ -6,6 +6,20 @@
   delegate_to: localhost
   run_once: true
 
+- name: Create default gateway
+  ansible.builtin.template:
+    src: gateway.j2
+    dest: "{{ playbook_dir }}/bootstrap/gateway.yaml"
+  delegate_to: localhost
+  run_once: true
+
+- name: Generate values file for traefik helm chart
+  ansible.builtin.template:
+    src: traefik-values.j2
+    dest: "{{ playbook_dir }}/bootstrap/traefik-values.yaml"
+  delegate_to: localhost
+  run_once: true
+
 - name: Generate root argocd app
   ansible.builtin.template:
     src: argocd-root-app.j2
