@@ -1,3 +1,7 @@
+- name: Set system timezone
+  community.general.timezone:
+    name: "{{ k8s_timezone }}"
+
 - name: Test if cluster config exists
   ansible.builtin.stat:
     path: /etc/kubernetes/admin.conf
