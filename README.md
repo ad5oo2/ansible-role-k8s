@@ -3,6 +3,7 @@
 * Check vars
 
 # After init:
+* Copy cluster config to ~/.kube from ./bootstrap/admin.conf
 * Untaint control-plane node(s) if needed
 
 # Before /bootstrap/bootstrap.sh

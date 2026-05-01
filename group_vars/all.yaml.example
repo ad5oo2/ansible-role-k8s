@@ -1,10 +1,10 @@
 download_dir: /opt/downloads
 arch: amd64
-k8s_version: 1.35.1
-k8s_release: 0.19.0
-k8s_gw_api_crd: 1.5.1
+k8s_version: 1.35.1 -- https://github.com/kubernetes-sigs/gateway-api/releases
+k8s_release: 0.19.0 -- https://github.com/kubernetes/release/releases
+k8s_gw_api_crd: 1.5.1 -- https://github.com/kubernetes-sigs/gateway-api/releases
 k8s_patches_dir: /opt/downloads/patches
 k8s_pod_network_cidr: 10.244.0.0/16
-containerd_version: 2.2.1
-runc_version: 1.4.0
-cni_version: 1.9.0
+containerd_version: 2.2.1 -- https://github.com/containerd/containerd/releases
+runc_version: 1.4.0 -- https://github.com/opencontainers/runc/releases
+cni_version: 1.9.0 -- https://github.com/containernetworking/plugins/releases
